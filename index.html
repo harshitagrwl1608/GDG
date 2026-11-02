@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4efe5">
+    <title>Volu-Mess — Chandu ke Chacha Audio</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="Chandu ke Chacha Audio home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>CHANDU KE CHACHA</strong><small>Audio & unnecessary acoustics</small></span>
+        </a>
+        <div class="topbar-label"><span class="live-dot"></span> VOLU-MESS™ <small>VOLUME DEPARTMENT / 07</small></div>
+      </header>
+
+      <main id="top">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">A PLAYBACK EXPERIENCE IN SEVEN UNHELPFUL ACTS</p>
+            <h1>You're listening.<br><em>Now try turning it up.</em></h1>
+            <p class="hero-copy">One track. Seven increasingly questionable volume controls. Follow each strange rule and hear the player respond.</p>
+          </div>
+          <div class="hero-stamp"><span>CHANDU KE CHACHA</span><strong>07</strong><small>VOLUME EXPERIMENTS</small></div>
+        </section>
+
+        <section class="player-card" aria-label="Audio player">
+          <div class="album-art" aria-hidden="true"><div class="vinyl"><i></i></div><span>CC<br>♪</span></div>
+          <div class="player-content">
+            <div class="track-line">
+              <div><p class="eyebrow small">NOW PLAYING</p><h2 id="trackTitle">Chacha's Midnight Rehearsal</h2><p id="trackSubtitle">Original demo loop · The House Orchestra</p></div>
+              <span class="track-state" id="trackStatus"><i></i> READY</span>
+            </div>
+            <div class="seek-line"><span id="currentTime">0:00</span><input id="seekBar" type="range" min="0" max="100" value="0" aria-label="Seek through the track"><span id="duration">0:12</span></div>
+            <div class="output-meter" aria-label="Audio signal level inside this player">
+              <div><span>PLAYER OUTPUT · BEFORE SYSTEM VOLUME</span><strong id="outputDb">−60 dBFS</strong></div>
+              <div class="output-meter-track"><span id="outputMeterFill"></span></div>
+            </div>
+            <div class="player-controls">
+              <button class="play-button" id="playButton" type="button" aria-label="Play track"><span id="playGlyph" aria-hidden="true">▶</span><span id="playLabel">Play the track</span></button>
+              <button class="load-button" id="loadTrackButton" type="button">Load your own audio <span aria-hidden="true">↗</span></button>
+              <input id="filePicker" type="file" accept="audio/*" hidden>
+              <div class="player-volume"><span>PLAYER VOLUME</span><strong><b id="gainPercent">42</b>%</strong></div>
+            </div>
+          </div>
+          <audio id="mediaElement" preload="metadata" aria-hidden="true"></audio>
+        </section>
+
+        <section class="experience" aria-labelledby="experienceTitle">
+          <aside class="attempt-rail">
+            <p class="eyebrow small">THE CHACHA METHOD</p>
+            <h2 id="experienceTitle">Seven ways to<br>move one number.</h2>
+            <p class="rail-note">The song keeps playing while the control idea changes.</p>
+            <nav id="attemptList" class="attempt-list" aria-label="Choose a volume-control idea"></nav>
+            <div class="rail-foot"><span class="rail-dot"></span> PLAYBACK CONTINUES BETWEEN ATTEMPTS</div>
+          </aside>
+
+          <section class="control-card" aria-labelledby="attemptTitle">
+            <div class="control-topline"><span id="attemptCount">ATTEMPT 01 / 07</span><span class="signal-pill"><i></i> LIVE PLAYER</span></div>
+            <div class="control-heading">
+              <div><p class="eyebrow small" id="attemptKicker">A LITTLE MORE PHYSICS</p><h2 id="attemptTitle">Tilt the soundbar</h2></div>
+              <span class="idea-number" id="ideaNumber">01</span>
+            </div>
+            <p class="control-description" id="attemptDescription"></p>
+            <div id="mechanism" class="mechanism" aria-live="polite"></div>
+            <div class="control-bottom">
+              <p class="narration" id="narration"><span>TRY 01</span> Try changing it this way…</p>
+              <div class="step-buttons">
+                <button id="previousAttempt" class="previous-button" type="button" aria-label="Previous volume idea">←</button>
+                <button id="nextAttempt" class="next-button" type="button">Oh no. Try the next one <span aria-hidden="true">→</span></button>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <footer class="page-footer">
+          <span>THESE CONTROLS CHANGE THIS PLAYER'S AUDIO.</span>
+          <span>YOUR DEVICE'S SYSTEM VOLUME STAYS WITH YOUR DEVICE.</span>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

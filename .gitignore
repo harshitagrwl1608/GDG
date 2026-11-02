@@ -1,0 +1,40 @@
+
+# Dependencies and generated files
+node_modules/
+**/node_modules/
+dist/
+build/
+.env
+.antigravity-ide/
+
+# IDE temporary data and caches
+.antigravity-ide/
+.codex/
+.vscode/
+
+# Dependencies and generated files
+node_modules/
+**/node_modules/
+dist/
+build/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# IDE caches
+.antigravity-ide/
+.codex/
+.vscode/
+
+# Dependencies and build output
+node_modules/
+**/node_modules/
+dist/
+build/
+
+# Secrets
+.env
+.env.*
+!.env.example
