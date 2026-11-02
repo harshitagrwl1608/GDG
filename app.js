@@ -56,9 +56,12 @@ let pumpClickSuppression = 0;
 let dotState = [];
 let dotOffset = 0;
 let draggingDot = null;
-let soundbarBaseVolume = 42;
 let soundbarAngle = 0;
 let soundbarDrag = null;
+let soundbarPhysicsFrame = null;
+let soundbarPhysicsVelocity = 0;
+let soundbarPhysicsPosition = 42;
+let soundbarPhysicsLastTime = 0;
 let mazeCells = [];
 let currentMazeCell = 0;
 let volumeDotTokens = [];
@@ -84,6 +87,7 @@ function setVolume(value) {
 function renderSoundbar() {
   const bar = document.querySelector("#tiltBar");
   const readout = document.querySelector("#tiltReadout");
+  const markerLabel = document.querySelector("#tiltKnob b");
   if (bar) {
     const markerPosition = 24 + volume * 0.65;
     bar.style.setProperty("--tilt", `${soundbarAngle}deg`);
@@ -91,21 +95,40 @@ function renderSoundbar() {
     bar.style.setProperty("--level", `${markerPosition}%`);
     bar.setAttribute("aria-valuenow", String(volume));
   }
+  if (markerLabel) markerLabel.textContent = String(volume);
   if (readout) readout.innerHTML = `<strong>${volume}%</strong><i></i> TILT ${Math.round(soundbarAngle)}°`;
 }
 
 function updateSoundbarTilt(angle) {
   soundbarAngle = clamp(angle, -18, 18);
-  const volumeChange = soundbarAngle >= 0
-    ? soundbarAngle * 8 + soundbarAngle * soundbarAngle * 0.15
-    : soundbarAngle * 3 - soundbarAngle * soundbarAngle * 0.04;
-  setVolume(soundbarBaseVolume + volumeChange);
+  renderSoundbar();
+}
+
+function stepSoundbarGravity(timestamp) {
+  if (!soundbarDrag || currentAttempt !== 0) {
+    soundbarPhysicsFrame = null;
+    return;
+  }
+  const dt = soundbarPhysicsLastTime ? Math.min((timestamp - soundbarPhysicsLastTime) / 1000, 0.05) : 0;
+  soundbarPhysicsLastTime = timestamp;
+  const gravity = 100 * Math.sin(soundbarAngle * Math.PI / 180);
+  soundbarPhysicsVelocity = clamp((soundbarPhysicsVelocity + gravity * dt) * Math.exp(-0.5 * dt), -75, 75);
+  soundbarPhysicsPosition += soundbarPhysicsVelocity * dt;
+  if (soundbarPhysicsPosition <= 0 || soundbarPhysicsPosition >= 100) {
+    soundbarPhysicsPosition = clamp(soundbarPhysicsPosition, 0, 100);
+    soundbarPhysicsVelocity = 0;
+  }
+  setVolume(soundbarPhysicsPosition);
+  soundbarPhysicsFrame = requestAnimationFrame(stepSoundbarGravity);
 }
 
 function releaseSoundbarTilt() {
   if (!soundbarDrag) return;
   soundbarDrag = null;
-  soundbarBaseVolume = volume;
+  if (soundbarPhysicsFrame !== null) cancelAnimationFrame(soundbarPhysicsFrame);
+  soundbarPhysicsFrame = null;
+  soundbarPhysicsLastTime = 0;
+  soundbarPhysicsPosition = volume;
   soundbarAngle = 0;
   renderSoundbar();
   document.querySelector("#tiltBar")?.classList.remove("is-dragging");
@@ -138,7 +161,7 @@ function renderActiveMechanism() {
 function createMechanism(index) {
   if (index === 0) return `
     <div class="tilt-stage" id="tiltStage">
-      <span class="tilt-instruction"><i></i> CORNER TILT CONTROL <span>HOLD A CORNER · LIFT OR LOWER</span></span>
+      <span class="tilt-instruction"><i></i> GRAVITY TILT CONTROL <span>HOLD THE ANGLE · GRAVITY KEEPS IT SLIDING</span></span>
       <div class="tilt-ambient" aria-hidden="true"></div>
       <div class="tilt-shadow" aria-hidden="true"></div>
       <div class="tilt-bar" id="tiltBar" role="slider" tabindex="0" aria-label="Hold a corner and lift or lower it to tilt the soundbar and adjust volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${volume}">
@@ -151,7 +174,7 @@ function createMechanism(index) {
       <span class="tilt-direction tilt-left">LEFT CORNER</span><span class="tilt-direction tilt-right">RIGHT CORNER</span>
       <span class="tilt-readout" id="tiltReadout">${volume}% <i></i> TILT 0°</span>
     </div>
-    <div class="mechanism-hint"><span>LIFT A CORNER · BAR TILTS</span><span>RELEASE · BAR LEVELS, VOLUME STAYS</span></div>`;
+    <div class="mechanism-hint"><span>STEEPER TILT · FASTER FALL</span><span>RELEASE · BAR LEVELS, VOLUME STAYS</span></div>`;
 
   if (index === 1) return `
     <div class="pump-stage">
@@ -213,15 +236,14 @@ function createMechanism(index) {
 }
 
 function setAttempt(index) {
+  if (soundbarDrag) releaseSoundbarTilt();
   currentAttempt = clamp(index, 0, attempts.length - 1);
   cancelProjectileFlight();
   launcherGesture = null;
   stopPump();
   if (leakTimer) window.clearInterval(leakTimer);
   leakTimer = null;
-  soundbarDrag = null;
   if (currentAttempt === 0) {
-    soundbarBaseVolume = volume;
     soundbarAngle = 0;
   }
   const item = attempts[currentAttempt];
@@ -958,9 +980,13 @@ ui.mechanism.addEventListener("pointerdown", (event) => {
   const soundbarGrip = event.target.closest(".tilt-grip");
   if (soundbar && soundbarGrip && currentAttempt === 0) {
     soundbarDrag = { startY: event.clientY, startAngle: soundbarAngle, side: soundbarGrip.dataset.side };
+    soundbarPhysicsPosition = volume;
+    soundbarPhysicsVelocity = 0;
+    soundbarPhysicsLastTime = 0;
     soundbar.classList.add("is-dragging");
     soundbarGrip.setPointerCapture(event.pointerId);
     event.preventDefault();
+    soundbarPhysicsFrame = requestAnimationFrame(stepSoundbarGravity);
     return;
   }
   const launcher = event.target.closest("#tiltLauncher");
