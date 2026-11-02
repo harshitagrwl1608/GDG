@@ -1,5 +1,5 @@
 const attempts = [
-  { title: "Tilt the soundbar", kicker: "A LITTLE MORE PHYSICS", description: "Hold either end and lift or lower it. The bar tilts and its volume marker runs along the rail; release and the bar levels out while the new volume stays.", narration: "Start over. Hold a corner, tilt the soundbar, and watch its marker run…" },
+  { title: "Tilt the soundbar", kicker: "A LITTLE MORE PHYSICS", description: "Hold either end and lift or lower it. Gravity pulls the volume marker along the rail: a small tilt drifts slowly, while a steeper tilt accelerates it. Release to level the bar; the volume stays.", narration: "Start over. Hold a corner and let gravity drag the volume marker…" },
   { title: "The leaky pump", kicker: "AIR-POWERED AUDIO", description: "Hold the pump to add volume. Let go and the sound slowly leaks away again.", narration: "Still not it. Pump the volume up before it leaks…" },
   { title: "Pi-powered volume", kicker: "MATHEMATICAL AUDIO", description: "Choose an input from 1–100. A π-heavy equation and a fresh random seed turn it into a different volume from 1–100.", narration: "That was too straightforward. Let π and a random seed decide…" },
   { title: "Number maze", kicker: "VOLUME BY MAZE", description: "The numbers are scattered through a maze. Move one cell at a time through open passages; each cell immediately sets the playback volume.", narration: "That grid was too easy. Find your way through the number maze…" },
@@ -60,7 +60,7 @@ let soundbarAngle = 0;
 let soundbarDrag = null;
 let soundbarPhysicsFrame = null;
 let soundbarPhysicsVelocity = 0;
-let soundbarPhysicsPosition = 42;
+let soundbarPhysicsPosition = volume;
 let soundbarPhysicsLastTime = 0;
 let mazeCells = [];
 let currentMazeCell = 0;
@@ -87,15 +87,13 @@ function setVolume(value) {
 function renderSoundbar() {
   const bar = document.querySelector("#tiltBar");
   const readout = document.querySelector("#tiltReadout");
-  const markerLabel = document.querySelector("#tiltKnob b");
   if (bar) {
-    const markerPosition = 24 + volume * 0.65;
+    const markerPosition = volume;
     bar.style.setProperty("--tilt", `${soundbarAngle}deg`);
     bar.style.setProperty("--knob", `${markerPosition}%`);
     bar.style.setProperty("--level", `${markerPosition}%`);
     bar.setAttribute("aria-valuenow", String(volume));
   }
-  if (markerLabel) markerLabel.textContent = String(volume);
   if (readout) readout.innerHTML = `<strong>${volume}%</strong><i></i> TILT ${Math.round(soundbarAngle)}°`;
 }
 
@@ -111,8 +109,12 @@ function stepSoundbarGravity(timestamp) {
   }
   const dt = soundbarPhysicsLastTime ? Math.min((timestamp - soundbarPhysicsLastTime) / 1000, 0.05) : 0;
   soundbarPhysicsLastTime = timestamp;
-  const gravity = 100 * Math.sin(soundbarAngle * Math.PI / 180);
-  soundbarPhysicsVelocity = clamp((soundbarPhysicsVelocity + gravity * dt) * Math.exp(-0.5 * dt), -75, 75);
+  const angleRadians = soundbarAngle * Math.PI / 180;
+  const gravityAcceleration = 9.81 * Math.sin(angleRadians);
+  const volumeScale = 35;
+  const friction = 0.18;
+  const acceleration = gravityAcceleration * volumeScale;
+  soundbarPhysicsVelocity = clamp((soundbarPhysicsVelocity + acceleration * dt) * Math.exp(-friction * dt), -180, 180);
   soundbarPhysicsPosition += soundbarPhysicsVelocity * dt;
   if (soundbarPhysicsPosition <= 0 || soundbarPhysicsPosition >= 100) {
     soundbarPhysicsPosition = clamp(soundbarPhysicsPosition, 0, 100);
@@ -165,16 +167,18 @@ function createMechanism(index) {
       <div class="tilt-ambient" aria-hidden="true"></div>
       <div class="tilt-shadow" aria-hidden="true"></div>
       <div class="tilt-bar" id="tiltBar" role="slider" tabindex="0" aria-label="Hold a corner and lift or lower it to tilt the soundbar and adjust volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${volume}">
-        <span class="tilt-grip tilt-grip-left" data-side="left" aria-hidden="true"></span>
+        <span class="tilt-grip tilt-grip-tl" data-side="left" aria-hidden="true"></span>
+        <span class="tilt-grip tilt-grip-tr" data-side="right" aria-hidden="true"></span>
         <span class="tilt-speaker" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 12h6l8-6v20l-8-6H5z"/><path d="M23 12c3 2 3 6 0 8M26 8c6 4 6 12 0 16"/></svg></span>
-        <span class="tilt-track"><span class="tilt-rail"></span><span class="tilt-knob" id="tiltKnob"><b>${volume}</b></span></span>
+        <span class="tilt-track"><span class="tilt-rail"></span><span class="tilt-knob" id="tiltKnob"></span></span>
         <span class="tilt-grille" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-        <span class="tilt-grip tilt-grip-right" data-side="right" aria-hidden="true"></span>
+        <span class="tilt-grip tilt-grip-bl" data-side="left" aria-hidden="true"></span>
+        <span class="tilt-grip tilt-grip-br" data-side="right" aria-hidden="true"></span>
       </div>
       <span class="tilt-direction tilt-left">LEFT CORNER</span><span class="tilt-direction tilt-right">RIGHT CORNER</span>
       <span class="tilt-readout" id="tiltReadout">${volume}% <i></i> TILT 0°</span>
     </div>
-    <div class="mechanism-hint"><span>STEEPER TILT · FASTER FALL</span><span>RELEASE · BAR LEVELS, VOLUME STAYS</span></div>`;
+    <div class="mechanism-hint"><span>TILT ANGLE SETS ACCELERATION</span><span>RELEASE LEVELS BAR · VOLUME HOLDS</span></div>`;
 
   if (index === 1) return `
     <div class="pump-stage">
@@ -1009,7 +1013,7 @@ ui.mechanism.addEventListener("pointerdown", (event) => {
     return;
   }
   const dot = event.target.closest(".sound-dot");
-  if (!dot || currentAttempt !== 5) return;
+  if (!dot || currentAttempt !== 4) return;
   draggingDot = dotState[Number(dot.dataset.dot)];
   dot.classList.add("dragging");
   dot.setPointerCapture(event.pointerId);
